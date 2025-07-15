@@ -13,17 +13,3 @@ COPY src ./src
 
 # Run Maven clean validate to verify the build
 RUN mvn clean validate
-
-# Run the SonarQube analysis with parameters (replace <your_token> and <sonar_url>)
-# Using ARGs so you can pass at build or runtime
-ARG SONAR_HOST_URL
-ARG SONAR_LOGIN
-ARG SONAR_PROJECT_KEY
-
-RUN mvn sonar:sonar \
-    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-    -Dsonar.host.url=${SONAR_HOST_URL} \
-    -Dsonar.login=${SONAR_LOGIN}
-
-# Optional: default command to keep container alive or run something else
-CMD ["tail", "-f", "/dev/null"]

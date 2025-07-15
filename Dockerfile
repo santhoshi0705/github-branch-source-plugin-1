@@ -1,22 +1,29 @@
-# Use an official Maven JDK image to build the plugin
-FROM maven:3.9.4-eclipse-temurin-17 AS builder
+# Use an OpenJDK 17 image because your logs show Java 17
+FROM maven:3.9.4-eclipse-temurin-17
 
-# Set work directory
-WORKDIR /build
+# Set working directory inside the container
+WORKDIR /app
 
-# Copy your project files
-COPY . .
+# Copy your pom.xml and source code into the container
+COPY pom.xml .
+COPY src ./src
 
-# Build the plugin (produces target/github-branch-source.hpi)
-RUN mvn clean package
+# Optional: copy other needed files (like Jenkinsfile or settings.xml if you have them)
+# COPY settings.xml /root/.m2/settings.xml
 
-# Final image to output only the plugin
-FROM alpine:3.18
+# Run Maven clean validate to verify the build
+RUN mvn clean validate
 
-# Create a folder to hold the plugin
-RUN mkdir /plugin
+# Run the SonarQube analysis with parameters (replace <your_token> and <sonar_url>)
+# Using ARGs so you can pass at build or runtime
+ARG SONAR_HOST_URL
+ARG SONAR_LOGIN
+ARG SONAR_PROJECT_KEY
 
-# Copy the built plugin
-COPY --from=builder /build/target/*.hpi /plugin/github-branch-source.hpi
+RUN mvn sonar:sonar \
+    -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+    -Dsonar.host.url=${SONAR_HOST_URL} \
+    -Dsonar.login=${SONAR_LOGIN}
 
-CMD ["ls", "-lh", "/plugin"]
+# Optional: default command to keep container alive or run something else
+CMD ["tail", "-f", "/dev/null"]
